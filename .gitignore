@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+dist_portable/
+build/
+*.egg
+
+# 仮想環境
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ログ
+logs/
+*.log
+
+# 設定ファイル（機密情報を含む可能性）
+# config.json はテンプレートのみコミット
+config.json
+
+# テスト
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

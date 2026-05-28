@@ -1,0 +1,9 @@
+{
+  "watch_folder": "//SERVER_NAME/share/path/to/watch_folder",
+  "destination_folder": "//SERVER_NAME/share/path/to/destination_folder",
+  "file_extensions": [
+    ".pdf"
+  ],
+  "check_interval": 1.0,
+  "show_notification_on_move": true
+}
