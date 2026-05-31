@@ -57,9 +57,9 @@ if not exist "get-pip.py" (
 "%TARGET_APP_PATH%\python_env\python.exe" get-pip.py --no-warn-script-location
 del get-pip.py
 
-rem 5. Install dependencies (watchdog, pystray, Pillow)
+rem 5. Install dependencies (watchdog, pystray, Pillow, pymupdf)
 echo [6/7] Installing dependency libraries...
-"%TARGET_APP_PATH%\python_env\python.exe" -m pip install watchdog>=3.0.0 pystray>=0.19.0 Pillow>=10.0.0 --no-warn-script-location
+"%TARGET_APP_PATH%\python_env\python.exe" -m pip install watchdog>=3.0.0 pystray>=0.19.0 Pillow>=10.0.0 pymupdf>=1.24.0 --no-warn-script-location
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Failed to install dependency libraries.
     goto error

@@ -8,14 +8,28 @@
 
 import json
 import os
+import sys
 from typing import Any
 
 from src.logger import get_logger
 
+
+def _get_base_dir() -> str:
+    """
+    アプリケーションのベースディレクトリを取得する。
+
+    Returns:
+        実行ファイルまたはスクリプトの配置ディレクトリパス
+    """
+    if getattr(sys, "frozen", False):
+        # PyInstallerでパッケージ化されている場合
+        return os.path.dirname(sys.executable)
+    # 通常のスクリプト実行の場合
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 # 履歴ファイルの保存先パス（プロジェクトルート直下）
-HISTORY_FILE_PATH: str = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "history.json"
-)
+HISTORY_FILE_PATH: str = os.path.join(_get_base_dir(), "history.json")
 
 
 def get_file_metadata(file_path: str) -> dict[str, Any] | None:

@@ -7,6 +7,7 @@
 
 import logging
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -43,7 +44,13 @@ def setup_logger(log_dir: str | None = None) -> logging.Logger:
     # ファイルハンドラ
     try:
         if log_dir is None:
-            log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
+            if getattr(sys, "frozen", False):
+                # PyInstallerでパッケージ化されている場合
+                base_dir = os.path.dirname(sys.executable)
+            else:
+                # 通常のスクリプト実行の場合
+                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            log_dir = os.path.join(base_dir, "logs")
 
         Path(log_dir).mkdir(parents=True, exist_ok=True)
 

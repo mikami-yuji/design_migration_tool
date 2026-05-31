@@ -42,7 +42,7 @@ if %ERRORLEVEL% neq 0 (
 rem 4. Install clean dependencies
 echo [4/6] Installing minimum production dependencies...
 python -m pip install --upgrade pip --no-warn-script-location
-python -m pip install watchdog>=3.0.0 pystray>=0.19.0 Pillow>=10.0.0 pyinstaller --no-warn-script-location
+python -m pip install watchdog>=3.0.0 pystray>=0.19.0 Pillow>=10.0.0 pymupdf>=1.24.0 pyinstaller --no-warn-script-location
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Failed to install dependencies in venv.
     goto error

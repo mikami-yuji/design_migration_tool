@@ -7,6 +7,7 @@ config.jsonの読み込み・保存・バリデーションを行う。
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -21,10 +22,23 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "show_notification_on_move": True,
 }
 
+
+def _get_base_dir() -> str:
+    """
+    アプリケーションのベースディレクトリを取得する。
+
+    Returns:
+        実行ファイルまたはスクリプトの配置ディレクトリパス
+    """
+    if getattr(sys, "frozen", False):
+        # PyInstallerでパッケージ化されている場合
+        return os.path.dirname(sys.executable)
+    # 通常のスクリプト実行の場合
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 # 設定ファイルのパス（プロジェクトルート直下）
-CONFIG_FILE_PATH: str = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "config.json"
-)
+CONFIG_FILE_PATH: str = os.path.join(_get_base_dir(), "config.json")
 
 
 def load_config(config_path: str | None = None) -> dict[str, Any]:
@@ -44,8 +58,22 @@ def load_config(config_path: str | None = None) -> dict[str, Any]:
     path = config_path or CONFIG_FILE_PATH
 
     if not os.path.exists(path):
-        logger.info(f"設定ファイルが見つかりません: {path}")
-        return DEFAULT_CONFIG.copy()
+        # 親ディレクトリ（プロジェクトルートなど）に config.json があればそこから設定を引き継ぐ
+        parent_config_path = os.path.join(
+            os.path.dirname(os.path.dirname(path)), "config.json"
+        )
+        if os.path.exists(parent_config_path):
+            logger.info(f"親ディレクトリの設定ファイルから引き継ぎます: {parent_config_path}")
+            try:
+                import shutil
+                shutil.copy2(parent_config_path, path)
+            except OSError as e:
+                logger.warning(f"設定ファイルの引き継ぎコピーに失敗しました: {e}")
+
+        # コピー成否を再チェック
+        if not os.path.exists(path):
+            logger.info(f"設定ファイルが見つかりません: {path}")
+            return DEFAULT_CONFIG.copy()
 
     try:
         with open(path, "r", encoding="utf-8") as f:
