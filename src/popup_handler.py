@@ -12,8 +12,9 @@ from typing import Any
 
 from src.logger import get_logger
 
-# Pillow と PyMuPDF (fitz) のインポート確認と型定義の準備
+# Pillow, pypdfium2, PyMuPDF (fitz) のインポート確認と型定義の準備
 HAS_PILLOW: bool = False
+HAS_PDFIUM: bool = False
 HAS_FITZ: bool = False
 
 try:
@@ -23,7 +24,13 @@ except ImportError:
     pass
 
 try:
-    import fitz  # PyMuPDF
+    import pypdfium2 as pdfium
+    HAS_PDFIUM = True
+except ImportError:
+    pass
+
+try:
+    import fitz  # PyMuPDF (fallback)
     HAS_FITZ = True
 except ImportError:
     pass
@@ -75,47 +82,51 @@ def render_pdf_page_to_image(
 
     # PDFの場合
     if ext == ".pdf":
-        if not HAS_FITZ:
-            logger.warning("fitz (PyMuPDF) がインポートできないため、PDFのプレビューを生成できません。")
-            return None
+        # 1. pypdfium2 による安全・高精細レンダリング（優先）
+        if HAS_PDFIUM:
+            try:
+                pdf = pdfium.PdfDocument(file_path)
+                if len(pdf) == 0:
+                    logger.warning(f"PDFにページが含まれていません: {file_path}")
+                    return None
+                page = pdf[0]
+                # 3倍解像度でレンダリング
+                img = page.render(scale=3.0).to_pil()
+                img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
+                img = img.filter(ImageFilter.SHARPEN)
+                return ImageTk.PhotoImage(img)
+            except Exception as e:
+                logger.error(f"pypdfium2でのPDFプレビュー生成エラー: {e}", exc_info=True)
 
-        doc: fitz.Document | None = None
-        try:
-            doc = fitz.open(file_path)
-            if len(doc) == 0:
-                logger.warning(f"PDFにページが含まれていません: {file_path}")
-                return None
+        # 2. fitz (PyMuPDF) によるフォールバックレンダリング
+        if HAS_FITZ:
+            doc: fitz.Document | None = None
+            try:
+                doc = fitz.open(file_path)
+                if len(doc) == 0:
+                    logger.warning(f"PDFにページが含まれていません: {file_path}")
+                    return None
 
-            # 最初のページをロード
-            page: fitz.Page = doc.load_page(0)
+                page = doc.load_page(0)
+                zoom_factor: float = 3.0
+                matrix = fitz.Matrix(zoom_factor, zoom_factor)
+                pixmap = page.get_pixmap(matrix=matrix)
 
-            # 超高解像度レンダリング用のマトリックス設定（ズーム率 3.0 倍）
-            zoom_factor: float = 3.0
-            matrix: fitz.Matrix = fitz.Matrix(zoom_factor, zoom_factor)
-            pixmap: fitz.Pixmap = page.get_pixmap(matrix=matrix)
+                img = Image.frombytes("RGB", [pixmap.width, pixmap.height], pixmap.samples)
+                img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
+                img = img.filter(ImageFilter.SHARPEN)
+                return ImageTk.PhotoImage(img)
+            except Exception as e:
+                logger.error(f"fitzでのPDFプレビュー生成エラー: {e}", exc_info=True)
+            finally:
+                if doc is not None:
+                    try:
+                        doc.close()
+                    except Exception:
+                        pass
 
-            # Pillow Imageオブジェクトに変換
-            img: Image.Image = Image.frombytes("RGB", [pixmap.width, pixmap.height], pixmap.samples)
-
-            # アスペクト比を維持して縮小
-            img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
-
-            # シャープ化フィルターの適用で文字の輪郭を非常にくっきりさせる
-            img = img.filter(ImageFilter.SHARPEN)
-
-            # PhotoImageオブジェクトを生成
-            photo_img: ImageTk.PhotoImage = ImageTk.PhotoImage(img)
-            return photo_img
-
-        except Exception as e:
-            logger.error(f"PDFプレビューの生成中にエラーが発生しました: {e}", exc_info=True)
-            return None
-        finally:
-            if doc is not None:
-                try:
-                    doc.close()
-                except Exception:
-                    pass
+        logger.warning("利用可能なPDFレンダラー（pypdfium2 または fitz）がありません。")
+        return None
 
     # 一般的な画像形式の場合
     elif ext in [".png", ".jpg", ".jpeg", ".gif", ".bmp"]:
