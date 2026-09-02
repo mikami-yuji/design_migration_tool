@@ -30,6 +30,11 @@ from src.history_manager import HistoryManager
 from src.logger import get_logger, setup_logger
 from src.popup_handler import show_copy_confirmation
 from src.setup_dialog import show_setup_dialog
+from src.startup_manager import (
+    create_startup_shortcut,
+    is_startup_registered,
+    remove_startup_shortcut,
+)
 from src.tray_app import TrayApp
 
 
@@ -122,6 +127,12 @@ class PDFMigrationApp:
 
         self._logger.info(f"監視フォルダ: {self._config['watch_folder']}")
         self._logger.info(f"移動先フォルダ: {self._config['destination_folder']}")
+
+        # スタートアップショートカットの同期（設定が有効かつ未作成の場合に自動生成）
+        if self._config.get("run_on_startup", True):
+            if not is_startup_registered():
+                create_startup_shortcut()
+
         return True
 
     def _on_new_file_detected(self, file_path: str) -> None:

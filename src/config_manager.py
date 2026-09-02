@@ -20,6 +20,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "file_extensions": [".pdf"],
     "check_interval": 1.0,
     "show_notification_on_move": True,
+    "run_on_startup": True,
 }
 
 

@@ -212,6 +212,24 @@ def show_setup_dialog(current_config: dict[str, Any] | None = None) -> dict[str,
     )
     dest_browse_btn.pack(side=tk.RIGHT, padx=(10, 0), ipady=4)
 
+    # --- スタートアップ自動登録設定 ---
+    startup_var = tk.BooleanVar(
+        value=current_config.get("run_on_startup", True) if current_config else True
+    )
+    startup_check = tk.Checkbutton(
+        main_frame,
+        text="🚀  PC起動時に自動で開始する（スタートアップ登録）",
+        variable=startup_var,
+        font=label_font,
+        fg=COLORS["accent"],
+        bg=COLORS["bg"],
+        activebackground=COLORS["bg"],
+        activeforeground=COLORS["accent"],
+        selectcolor=COLORS["input_bg"],
+        cursor="hand2",
+    )
+    startup_check.pack(anchor=tk.W, pady=(0, 20))
+
     # 区切り線
     separator2 = tk.Frame(main_frame, bg=COLORS["border"], height=1)
     separator2.pack(fill=tk.X, pady=(0, 20))
@@ -226,6 +244,7 @@ def show_setup_dialog(current_config: dict[str, Any] | None = None) -> dict[str,
 
         watch_folder = watch_var.get().strip()
         dest_folder = dest_var.get().strip()
+        run_on_startup = startup_var.get()
 
         # バリデーション
         if not watch_folder:
@@ -249,6 +268,16 @@ def show_setup_dialog(current_config: dict[str, Any] | None = None) -> dict[str,
             )
             return
 
+        # スタートアップ自動設定の適用
+        try:
+            from src.startup_manager import create_startup_shortcut, remove_startup_shortcut
+            if run_on_startup:
+                create_startup_shortcut()
+            else:
+                remove_startup_shortcut()
+        except Exception as e:
+            logger.warning(f"スタートアップ設定の適用中に例外が発生しました: {e}")
+
         result = {
             "watch_folder": watch_folder,
             "destination_folder": dest_folder,
@@ -263,9 +292,10 @@ def show_setup_dialog(current_config: dict[str, Any] | None = None) -> dict[str,
                 else 1.0
             ),
             "show_notification_on_move": True,
+            "run_on_startup": run_on_startup,
         }
 
-        logger.info(f"設定を保存します - 監視: {watch_folder}, 移動先: {dest_folder}")
+        logger.info(f"設定を保存します - 監視: {watch_folder}, 移動先: {dest_folder}, 自動起動: {run_on_startup}")
         root.destroy()
 
     def on_cancel() -> None:

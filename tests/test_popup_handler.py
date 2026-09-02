@@ -7,7 +7,6 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 import pytest
 from PIL import Image, ImageTk
-import fitz
 
 from src.popup_handler import (
     render_pdf_page_to_image,
@@ -54,13 +53,9 @@ class TestRenderPdfPageToImage:
 
         file_path = os.path.join(str(tmp_path), "test.pdf")
         
-        # PyMuPDF を使用してダミーの1ページPDFを作成
-        doc = fitz.open()
-        page = doc.new_page(width=200, height=200)
-        # 簡単な図形を描画
-        page.draw_rect([10, 10, 100, 100], color=(0, 0, 1), fill=(0, 1, 0))
-        doc.save(file_path)
-        doc.close()
+        # PIL を使用してダミーの1ページPDFを作成
+        img = Image.new("RGB", (200, 200), color="white")
+        img.save(file_path, "PDF")
 
         result = render_pdf_page_to_image(file_path, max_width=100, max_height=100)
         assert result is not None
