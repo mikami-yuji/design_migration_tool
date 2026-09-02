@@ -13,6 +13,11 @@ import sys
 import threading
 import time
 
+# アプリケーションのルートディレクトリをsys.pathに追加
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+if APP_ROOT not in sys.path:
+    sys.path.insert(0, APP_ROOT)
+
 from src.config_manager import (
     is_first_launch,
     load_config,
